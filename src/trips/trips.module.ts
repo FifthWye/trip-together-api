@@ -5,7 +5,9 @@ import { TripsService } from './trips.service';
 import { TripsController } from './trips.controller';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Trip.name, schema: TripSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Trip.name, schema: TripSchema }]),
+  ],
   controllers: [TripsController],
   providers: [TripsService],
 })

@@ -21,7 +21,8 @@ import { AppService } from './app.service';
       expandVariables: true,
     }),
     MongooseModule.forRoot(
-      (process.env.MONGODB_URI as string) || 'mongodb://localhost:27017/trip-together',
+      (process.env.MONGODB_URI as string) ||
+        'mongodb://localhost:27017/trip-together',
     ),
     AuthModule,
     TripsModule,

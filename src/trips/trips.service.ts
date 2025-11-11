@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Trip, TripDocument } from './schemas/trip.schema';
 import { Model, Types } from 'mongoose';
@@ -9,8 +13,12 @@ import { UpdateTripDto } from './dto/update-trip.dto';
 export class TripsService {
   constructor(@InjectModel(Trip.name) private trips: Model<TripDocument>) {}
 
-  listForAll() { return this.trips.find().lean(); }
-  listForUser(userId: string) { return this.trips.find({ members: userId }).lean(); }
+  listForAll() {
+    return this.trips.find().lean();
+  }
+  listForUser(userId: string) {
+    return this.trips.find({ members: userId }).lean();
+  }
 
   async create(ownerId: string, dto: CreateTripDto) {
     const trip = await this.trips.create({
@@ -61,15 +69,20 @@ export class TripsService {
     return t.toObject();
   }
 
-  async voteDate(id: string, index: number, userId: string, kind: 'up'|'down') {
+  async voteDate(
+    id: string,
+    index: number,
+    userId: string,
+    kind: 'up' | 'down',
+  ) {
     const t = await this.trips.findById(id);
     if (!t) throw new NotFoundException();
     const opt = t.dates[index];
     if (!opt) throw new NotFoundException('date option not found');
 
     // remove from both then add to selected
-    opt.votes.up = opt.votes.up.filter(u => u !== userId);
-    opt.votes.down = opt.votes.down.filter(u => u !== userId);
+    opt.votes.up = opt.votes.up.filter((u) => u !== userId);
+    opt.votes.down = opt.votes.down.filter((u) => u !== userId);
     (opt.votes as any)[kind].push(userId);
 
     await t.save();

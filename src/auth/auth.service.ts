@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Model } from 'mongoose';
@@ -29,8 +33,15 @@ export class AuthService {
   }
 
   private issue(user: UserDocument) {
-    const payload = { sub: user._id.toString(), email: user.email, name: user.name };
+    const payload = {
+      sub: user._id.toString(),
+      email: user.email,
+      name: user.name,
+    };
     const token = this.jwt.sign(payload);
-    return { token, user: { id: payload.sub, email: user.email, name: user.name } };
+    return {
+      token,
+      user: { id: payload.sub, email: user.email, name: user.name },
+    };
   }
 }

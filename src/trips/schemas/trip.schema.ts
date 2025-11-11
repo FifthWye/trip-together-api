@@ -4,7 +4,7 @@ import { HydratedDocument, Types } from 'mongoose';
 export type TripDocument = HydratedDocument<Trip>;
 
 class Vote {
-  @Prop({ type: [String], default: [] }) up: string[];   // user ids who voted up
+  @Prop({ type: [String], default: [] }) up: string[]; // user ids who voted up
   @Prop({ type: [String], default: [] }) down: string[];
 }
 const VoteSchema = SchemaFactory.createForClass(Vote);
@@ -12,7 +12,7 @@ const VoteSchema = SchemaFactory.createForClass(Vote);
 @Schema({ _id: false })
 class DateOption {
   @Prop({ required: true }) start: string; // ISO date
-  @Prop({ required: true }) end: string;   // ISO date
+  @Prop({ required: true }) end: string; // ISO date
   @Prop({ type: VoteSchema, default: {} }) votes: Vote;
 }
 const DateOptionSchema = SchemaFactory.createForClass(DateOption);
@@ -35,6 +35,7 @@ export class Trip {
   @Prop({ type: [ItemOptionSchema], default: [] }) places: any[];
   @Prop({ type: [ItemOptionSchema], default: [] }) restaurants: any[];
   @Prop() shareCode?: string; // for /share semantics
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true }) owner: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  owner: Types.ObjectId;
 }
 export const TripSchema = SchemaFactory.createForClass(Trip);

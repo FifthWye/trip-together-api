@@ -10,26 +10,42 @@ export class AuthController {
   constructor(private auth: AuthService) {}
 
   @Post('signup')
-  async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
+  async signup(
+    @Body() dto: SignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.auth.signup(dto.email, dto.password, dto.name);
-    res.cookie('token', result.token, { httpOnly: true, sameSite: 'lax', secure: false });
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+    });
     return result;
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.auth.login(dto.email, dto.password);
-    res.cookie('token', result.token, { httpOnly: true, sameSite: 'lax', secure: false });
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+    });
     return result;
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('token');
     return { ok: true };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me() { return { ok: true }; } // You can enrich from request.user via custom decorator if needed
+  me() {
+    return { ok: true };
+  } // You can enrich from request.user via custom decorator if needed
 }
