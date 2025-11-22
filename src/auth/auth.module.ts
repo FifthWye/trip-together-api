@@ -17,6 +17,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 
         return {
           secret,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           signOptions: { expiresIn: expiresIn as any },
         };
       },
