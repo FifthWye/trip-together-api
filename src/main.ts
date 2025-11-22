@@ -10,11 +10,30 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const origins = process.env.CORS_ORIGINS?.split(',') ?? [
-    'http://localhost:3000',
-  ];
-  app.enableCors({ origin: origins, credentials: true });
+  // CORS configuration - permissive for development
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  if (isDevelopment) {
+    // In development, allow all origins for easier local development
+    app.enableCors({
+      origin: true, // Allow all origins in dev
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+  } else {
+    // In production, use configured origins
+    const origins = process.env.CORS_ORIGINS?.split(',') ?? [
+      'http://localhost:3000',
+    ];
+    app.enableCors({
+      origin: origins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+  }
 
   await app.listen(process.env.PORT || 4000);
 }
-bootstrap();
+void bootstrap();
