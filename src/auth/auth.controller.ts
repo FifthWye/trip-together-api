@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import type { Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from '../common/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -45,7 +46,13 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me() {
-    return { ok: true };
-  } // You can enrich from request.user via custom decorator if needed
+  me(@CurrentUser() user: { sub: string; email: string; name?: string }) {
+    return {
+      user: {
+        id: user.sub,
+        email: user.email,
+        name: user.name,
+      },
+    };
+  }
 }

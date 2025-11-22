@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
@@ -8,10 +9,18 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret',
-      // Cast to any to satisfy typings that expect number | StringValue
-      signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET') || 'dev-secret';
+        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') || '7d';
+
+        return {
+          secret,
+          signOptions: { expiresIn: expiresIn as any },
+        };
+      },
+      inject: [ConfigService],
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
