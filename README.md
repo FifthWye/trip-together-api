@@ -28,6 +28,7 @@ MONGODB_URI=mongodb://localhost:27017/trip-together
 JWT_SECRET=changeme
 JWT_EXPIRES_IN=7d
 CORS_ORIGINS=http://localhost:3000
+GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
 ```
 
 Environment variables are loaded with `@nestjs/config` and support `${VAR}` expansion.
@@ -135,6 +136,50 @@ Trips endpoints are under `/api/trips` (see `src/trips`).
   - Query params:
     - `index` — zero-based index of the date option
     - `kind` — `"up"` or `"down"`
+
+### Places (public endpoints)
+
+- GET `/api/places/autocomplete`
+  - Get place autocomplete suggestions from Google Places API.
+  - Query params:
+    - `input` (required) — The text input from the user (minimum 2 characters)
+  - Response (example):
+    ```json
+    {
+      "status": "OK",
+      "predictions": [
+        {
+          "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+          "description": "Pittsburgh, PA, USA",
+          "structured_formatting": {
+            "main_text": "Pittsburgh",
+            "secondary_text": "PA, USA"
+          }
+        }
+      ]
+    }
+    ```
+- GET `/api/places/details`
+  - Get detailed information about a place by its place_id.
+  - Query params:
+    - `place_id` (required) — The place_id from the autocomplete prediction
+  - Response (example):
+    ```json
+    {
+      "status": "OK",
+      "result": {
+        "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+        "name": "Pittsburgh",
+        "formatted_address": "Pittsburgh, PA, USA",
+        "geometry": {
+          "location": {
+            "lat": 40.4406,
+            "lng": -79.9959
+          }
+        }
+      }
+    }
+    ```
 
 ## Testing
 
