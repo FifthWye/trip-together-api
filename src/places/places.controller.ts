@@ -6,14 +6,17 @@ export class PlacesController {
   constructor(private readonly placesService: PlacesService) {}
 
   @Get('autocomplete')
-  async getAutocomplete(@Query('input') input: string) {
+  async getAutocomplete(
+    @Query('input') input: string,
+    @Query('types') types?: string,
+  ) {
     if (!input || input.trim().length < 2) {
       return {
         status: 'INVALID_REQUEST',
         predictions: [],
       };
     }
-    return await this.placesService.getAutocomplete(input.trim());
+    return await this.placesService.getAutocomplete(input.trim(), types);
   }
 
   @Get('details')

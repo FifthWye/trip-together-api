@@ -143,6 +143,7 @@ Trips endpoints are under `/api/trips` (see `src/trips`).
   - Get place autocomplete suggestions from Google Places API.
   - Query params:
     - `input` (required) — The text input from the user (minimum 2 characters)
+    - `types` (optional) — Filter results by place type (e.g., `lodging` for hotels, `restaurant` for restaurants)
   - Response (example):
     ```json
     {

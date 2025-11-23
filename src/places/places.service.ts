@@ -14,7 +14,7 @@ export class PlacesService {
     }
   }
 
-  async getAutocomplete(input: string) {
+  async getAutocomplete(input: string, types?: string) {
     if (!this.apiKey) {
       throw new HttpException(
         'Google Places API key not configured',
@@ -23,11 +23,18 @@ export class PlacesService {
     }
 
     try {
+      const params: Record<string, string> = {
+        input,
+        key: this.apiKey,
+      };
+
+      // Add types parameter if provided
+      if (types) {
+        params.types = types;
+      }
+
       const response = await axios.get(`${this.baseUrl}/autocomplete/json`, {
-        params: {
-          input,
-          key: this.apiKey,
-        },
+        params,
       });
 
       // Forward Google's response, but handle errors appropriately
