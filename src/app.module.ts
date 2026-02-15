@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { TripsModule } from './trips/trips.module';
 import { PlacesModule } from './places/places.module';
 import { AppController } from './app.controller';
@@ -26,6 +27,7 @@ import { AppService } from './app.service';
         'mongodb://localhost:27017/trip-together',
     ),
     AuthModule,
+    UsersModule,
     TripsModule,
     PlacesModule,
   ],
