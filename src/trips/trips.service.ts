@@ -27,13 +27,17 @@ export class TripsService {
       owner: new Types.ObjectId(ownerId),
       title: dto.title,
       description: dto.description,
-      members: [ownerId],
+      members: [new Types.ObjectId(ownerId)],
     });
     return trip.toObject();
   }
 
   async get(id: string) {
-    const t = await this.trips.findById(id).lean();
+    const t = await this.trips
+      .findById(id)
+      .populate('owner', 'name email avatarUrl')
+      .populate('members', 'name email avatarUrl')
+      .lean();
     if (!t) throw new NotFoundException();
     return t;
   }
@@ -58,7 +62,10 @@ export class TripsService {
   async join(id: string, userId: string) {
     const t = await this.trips.findById(id);
     if (!t) throw new NotFoundException();
-    if (!t.members.includes(userId)) t.members.push(userId);
+    const oid = new Types.ObjectId(userId);
+    if (!t.members.some(m => m.toString() === userId)) {
+         t.members.push(oid);
+    }
     await t.save();
     return t.toObject();
   }
@@ -66,7 +73,12 @@ export class TripsService {
   async addDate(id: string, start: string, end: string) {
     const t = await this.trips.findById(id);
     if (!t) throw new NotFoundException();
-    t.dates.push({ start, end, votes: { up: [], down: [] } } as any);
+    // Explicitly create the votes object with up/down arrays to avoid schema issues
+    t.dates.push({ 
+      start, 
+      end, 
+      votes: { up: [], down: [] } 
+    } as any);
     await t.save();
     return t.toObject();
   }
@@ -79,18 +91,31 @@ export class TripsService {
   ) {
     const t = await this.trips.findById(id).lean();
     if (!t) throw new NotFoundException();
+    
+    // Robustly handle votes object (handle potential Mongoose subdoc or plain obj)
+    // We convert to POJO, modify, and re-assign to ensure Mongoose detects the change
+    // Using JSON parse/stringify is a safe way to deep clone and detach from Mongoose tracking
     const opt = t.dates[index];
     if (!opt) throw new NotFoundException('date option not found');
 
     // Initialize votes if missing (legacy data)
-    if (!opt.votes) opt.votes = { up: [], down: [] };
+    if (!opt.votes) opt.votes = { up: [], down: [] } as any;
     if (!opt.votes.up) opt.votes.up = [];
     if (!opt.votes.down) opt.votes.down = [];
 
-    // Remove user from both arrays, then add to selected kind
-    opt.votes.up = opt.votes.up.filter((u) => u !== userId);
-    opt.votes.down = opt.votes.down.filter((u) => u !== userId);
-    opt.votes[kind].push(userId);
+    // Check current vote status for toggle behavior
+    const upIndex = opt.votes.up.indexOf(userId);
+    const downIndex = opt.votes.down.indexOf(userId);
+    const alreadyVotedThisWay = (kind === 'up' && upIndex > -1) || (kind === 'down' && downIndex > -1);
+
+    // Remove user from both arrays
+    if (upIndex > -1) opt.votes.up.splice(upIndex, 1);
+    if (downIndex > -1) opt.votes.down.splice(downIndex, 1);
+
+    // Only add back if they weren't already voting this way (toggle)
+    if (!alreadyVotedThisWay) {
+      opt.votes[kind].push(userId);
+    }
 
     // Use $set on the specific date to ensure persistence
     const updated = await this.trips.findByIdAndUpdate(
@@ -111,7 +136,11 @@ export class TripsService {
     if (!t) throw new NotFoundException();
     t[category].push({ name, url, votes: { up: [], down: [] } } as any);
     await t.save();
-    return t.toObject();
+    
+    // Return fully populated trip so frontend state (members, etc.) doesn't break
+    const updated = await this.get(id);
+    
+    return updated;
   }
 
   async voteItem(
