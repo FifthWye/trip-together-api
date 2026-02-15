@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { AddDateDto } from './dto/add-date.dto';
+import { AddItemDto } from './dto/add-item.dto';
 import { CurrentUser } from '../common/user.decorator';
 
 @UseGuards(JwtAuthGuard)
@@ -82,5 +83,42 @@ export class TripsController {
     @CurrentUser() user,
   ) {
     return this.trips.voteDate(id, Number(index), user.sub, kind);
+  }
+
+  // POST /api/trips/:id/items?category=accommodations|places|restaurants
+  @Post(':id/items')
+  addItem(
+    @Param('id') id: string,
+    @Query('category') category: 'accommodations' | 'places' | 'restaurants',
+    @Body() dto: AddItemDto,
+  ) {
+    return this.trips.addItem(id, category, dto.name, dto.url);
+  }
+
+  // PATCH /api/trips/:id/items/vote?category=accommodations&index=0
+  @Patch(':id/items/vote')
+  voteItem(
+    @Param('id') id: string,
+    @Query('category') category: 'accommodations' | 'places' | 'restaurants',
+    @Query('index') index: string,
+    @CurrentUser() user,
+  ) {
+    return this.trips.voteItem(id, category, Number(index), user.sub);
+  }
+
+  // PATCH /api/trips/:id/dates/finalize?index=0
+  @Patch(':id/dates/finalize')
+  finalizeDates(
+    @Param('id') id: string,
+    @Query('index') index: string,
+    @CurrentUser() user,
+  ) {
+    return this.trips.finalizeDates(id, user.sub, Number(index));
+  }
+
+  // POST /api/trips/:id/share
+  @Post(':id/share')
+  generateShareCode(@Param('id') id: string, @CurrentUser() user) {
+    return this.trips.generateShareCode(id, user.sub);
   }
 }

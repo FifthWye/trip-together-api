@@ -2,12 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Trip, TripDocument } from './schemas/trip.schema';
 import { Model, Types } from 'mongoose';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class TripsService {
@@ -87,7 +89,7 @@ export class TripsService {
     userId: string,
     kind: 'up' | 'down',
   ) {
-    const t = await this.trips.findById(id);
+    const t = await this.trips.findById(id).lean();
     if (!t) throw new NotFoundException();
     
     // Robustly handle votes object (handle potential Mongoose subdoc or plain obj)
@@ -96,41 +98,110 @@ export class TripsService {
     const opt = t.dates[index];
     if (!opt) throw new NotFoundException('date option not found');
 
-    // Initialize votes if missing
-    if (!opt.votes) {
-      opt.votes = { up: [], down: [] } as any;
-    }
+    // Initialize votes if missing (legacy data)
+    if (!opt.votes) opt.votes = { up: [], down: [] } as any;
     if (!opt.votes.up) opt.votes.up = [];
     if (!opt.votes.down) opt.votes.down = [];
 
-    // Check current vote status
+    // Check current vote status for toggle behavior
     const upIndex = opt.votes.up.indexOf(userId);
     const downIndex = opt.votes.down.indexOf(userId);
-    
-    // Check if user already voted for this type (for toggle behavior)
     const alreadyVotedThisWay = (kind === 'up' && upIndex > -1) || (kind === 'down' && downIndex > -1);
-    
+
     // Remove user from both arrays
     if (upIndex > -1) opt.votes.up.splice(upIndex, 1);
     if (downIndex > -1) opt.votes.down.splice(downIndex, 1);
 
-    // Only add back if they weren't already voting this way (toggle behavior)
+    // Only add back if they weren't already voting this way (toggle)
     if (!alreadyVotedThisWay) {
-      if (kind === 'up') {
-        opt.votes.up.push(userId);
-      } else {
-        opt.votes.down.push(userId);
-      }
+      opt.votes[kind].push(userId);
     }
-    
-    // Mongoose might not detect deep changes in mixed types/arrays sometimes, mark modify
-    t.markModified('dates');
 
+    // Use $set on the specific date to ensure persistence
+    const updated = await this.trips.findByIdAndUpdate(
+      id,
+      { $set: { [`dates.${index}.votes`]: opt.votes } },
+      { new: true },
+    ).lean();
+    return updated;
+  }
+
+  async addItem(
+    id: string,
+    category: 'accommodations' | 'places' | 'restaurants',
+    name: string,
+    url?: string,
+  ) {
+    const t = await this.trips.findById(id);
+    if (!t) throw new NotFoundException();
+    t[category].push({ name, url, votes: { up: [], down: [] } } as any);
     await t.save();
     
     // Return fully populated trip so frontend state (members, etc.) doesn't break
     const updated = await this.get(id);
     
     return updated;
+  }
+
+  async voteItem(
+    id: string,
+    category: 'accommodations' | 'places' | 'restaurants',
+    index: number,
+    userId: string,
+  ) {
+    const t = await this.trips.findById(id).lean();
+    if (!t) throw new NotFoundException();
+    const opt = t[category][index];
+    if (!opt) throw new NotFoundException('item option not found');
+
+    // Initialize votes if missing (legacy data)
+    if (!opt.votes) opt.votes = { up: [], down: [] };
+    if (!opt.votes.up) opt.votes.up = [];
+
+    // Toggle: if already voted, remove; otherwise add
+    const idx = opt.votes.up.indexOf(userId);
+    if (idx !== -1) {
+      opt.votes.up.splice(idx, 1);
+    } else {
+      opt.votes.up.push(userId);
+    }
+
+    const updated = await this.trips.findByIdAndUpdate(
+      id,
+      { $set: { [`${category}.${index}.votes`]: opt.votes } },
+      { new: true },
+    ).lean();
+    return updated;
+  }
+
+  async finalizeDates(id: string, userId: string, index: number) {
+    const t = await this.trips.findById(id);
+    if (!t) throw new NotFoundException();
+    if (t.owner.toString() !== userId) throw new ForbiddenException();
+    const opt = t.dates[index];
+    if (!opt) throw new NotFoundException('date option not found');
+
+    t.dates = [opt] as any;
+    t.datesFinalized = true;
+    await t.save();
+    return t.toObject();
+  }
+
+  async generateShareCode(id: string, userId: string) {
+    const t = await this.trips.findById(id);
+    if (!t) throw new NotFoundException();
+    if (t.owner.toString() !== userId) throw new ForbiddenException();
+
+    if (!t.shareCode) {
+      t.shareCode = randomBytes(4).toString('hex');
+      await t.save();
+    }
+    return { shareCode: t.shareCode };
+  }
+
+  async getByShareCode(code: string) {
+    const t = await this.trips.findOne({ shareCode: code }).lean();
+    if (!t) throw new NotFoundException('Trip not found');
+    return t;
   }
 }

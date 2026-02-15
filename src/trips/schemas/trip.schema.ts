@@ -5,7 +5,7 @@ export type TripDocument = HydratedDocument<Trip>;
 
 @Schema({ _id: false })
 class Vote {
-  @Prop({ type: [String], default: [] }) up: string[]; // user ids who voted up
+  @Prop({ type: [String], default: [] }) up: string[];
   @Prop({ type: [String], default: [] }) down: string[];
 }
 const VoteSchema = SchemaFactory.createForClass(Vote);
@@ -37,6 +37,7 @@ export class Trip {
   @Prop({ type: [ItemOptionSchema], default: [] }) places: any[];
   @Prop({ type: [ItemOptionSchema], default: [] }) restaurants: any[];
   @Prop() shareCode?: string; // for /share semantics
+  @Prop({ default: false }) datesFinalized: boolean;
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   owner: Types.ObjectId;
 }
