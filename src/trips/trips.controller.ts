@@ -24,8 +24,8 @@ export class TripsController {
 
   // GET /api/trips
   @Get()
-  listAll() {
-    return this.trips.listForAll();
+  listAll(@CurrentUser() user) {
+    return this.trips.listForUser(user.sub);
   }
 
   // GET /api/trips/user
@@ -40,10 +40,16 @@ export class TripsController {
     return this.trips.create(user.sub, dto);
   }
 
+  // GET /api/trips/:id/activity
+  @Get(':id/activity')
+  getActivity(@Param('id') id: string, @CurrentUser() user) {
+    return this.trips.getActivity(id, user.sub);
+  }
+
   // GET /api/trips/:id
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.trips.get(id);
+  get(@Param('id') id: string, @CurrentUser() user) {
+    return this.trips.getForUser(id, user.sub);
   }
 
   // PATCH /api/trips/:id
@@ -70,8 +76,8 @@ export class TripsController {
 
   // POST /api/trips/:id/dates
   @Post(':id/dates')
-  addDate(@Param('id') id: string, @Body() dto: AddDateDto) {
-    return this.trips.addDate(id, dto.start, dto.end);
+  addDate(@Param('id') id: string, @Body() dto: AddDateDto, @CurrentUser() user) {
+    return this.trips.addDate(id, user.sub, dto.start, dto.end);
   }
 
   // PATCH /api/trips/:id/dates/vote?index=0&kind=up
@@ -91,19 +97,44 @@ export class TripsController {
     @Param('id') id: string,
     @Query('category') category: 'accommodations' | 'places' | 'restaurants',
     @Body() dto: AddItemDto,
+    @CurrentUser() user,
   ) {
-    return this.trips.addItem(id, category, dto.name, dto.url);
+    return this.trips.addItem(id, user.sub, category, dto);
   }
 
-  // PATCH /api/trips/:id/items/vote?category=accommodations&index=0
+  // PATCH /api/trips/:id/items/:category/:index
+  @Patch(':id/items/:category/:index')
+  updateItem(
+    @Param('id') id: string,
+    @Param('category') category: 'accommodations' | 'places' | 'restaurants',
+    @Param('index') index: string,
+    @Body() dto: AddItemDto,
+    @CurrentUser() user,
+  ) {
+    return this.trips.updateItem(id, user.sub, category, Number(index), dto);
+  }
+
+  // DELETE /api/trips/:id/items/:category/:index
+  @Delete(':id/items/:category/:index')
+  removeItem(
+    @Param('id') id: string,
+    @Param('category') category: 'accommodations' | 'places' | 'restaurants',
+    @Param('index') index: string,
+    @CurrentUser() user,
+  ) {
+    return this.trips.removeItem(id, user.sub, category, Number(index));
+  }
+
+  // PATCH /api/trips/:id/items/vote?category=accommodations&index=0&kind=up
   @Patch(':id/items/vote')
   voteItem(
     @Param('id') id: string,
     @Query('category') category: 'accommodations' | 'places' | 'restaurants',
     @Query('index') index: string,
+    @Query('kind') kind: 'up' | 'down',
     @CurrentUser() user,
   ) {
-    return this.trips.voteItem(id, category, Number(index), user.sub);
+    return this.trips.voteItem(id, category, Number(index), user.sub, kind || 'up');
   }
 
   // PATCH /api/trips/:id/dates/finalize?index=0
@@ -114,6 +145,17 @@ export class TripsController {
     @CurrentUser() user,
   ) {
     return this.trips.finalizeDates(id, user.sub, Number(index));
+  }
+
+  // PATCH /api/trips/:id/items/finalize?category=accommodations&index=0
+  @Patch(':id/items/finalize')
+  finalizeItem(
+    @Param('id') id: string,
+    @Query('category') category: 'accommodations' | 'places' | 'restaurants',
+    @Query('index') index: string,
+    @CurrentUser() user,
+  ) {
+    return this.trips.finalizeItem(id, user.sub, category, Number(index));
   }
 
   // POST /api/trips/:id/share
