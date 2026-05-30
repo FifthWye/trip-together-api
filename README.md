@@ -29,6 +29,10 @@ JWT_SECRET=changeme
 JWT_EXPIRES_IN=7d
 CORS_ORIGINS=http://localhost:3000
 GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
+GOOGLE_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+GOOGLE_IOS_CLIENT_ID=
+GOOGLE_ANDROID_CLIENT_ID=
+GOOGLE_EXPO_CLIENT_ID=
 ```
 
 Environment variables are loaded with `@nestjs/config` and support `${VAR}` expansion.
@@ -62,6 +66,9 @@ App listens on `http://localhost:${PORT:-4000}` and serves routes under `/api`.
 - POST `/api/auth/login`
   - Body: `{ "email": string, "password": string }`
   - Sets httpOnly cookie `token`. Returns `{ token, user? }`.
+- POST `/api/auth/google`
+  - Body: `{ "idToken": string }`
+  - Verifies the Google ID token, creates/links the user by email, sets httpOnly cookie `token`, and returns `{ token, user }`.
 - POST `/api/auth/logout`
   - Clears cookie. Returns `{ ok: true }`.
 - GET `/api/auth/me`
