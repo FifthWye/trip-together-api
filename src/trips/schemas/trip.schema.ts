@@ -71,6 +71,8 @@ export class Trip {
   @Prop({ default: false }) datesFinalized: boolean;
   @Prop({ type: FinalizedOptionsSchema, default: () => ({}) })
   finalized: FinalizedOptions;
+  @Prop({ default: false }) tripFinalized: boolean;
+  @Prop() finalizedAt?: Date;
   @Prop({ type: [ActivityEventSchema], default: [] }) activity: ActivityEvent[];
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   owner: Types.ObjectId;

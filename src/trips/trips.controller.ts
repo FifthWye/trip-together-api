@@ -158,6 +158,12 @@ export class TripsController {
     return this.trips.finalizeItem(id, user.sub, category, Number(index));
   }
 
+  // PATCH /api/trips/:id/finalize
+  @Patch(':id/finalize')
+  finalizeTrip(@Param('id') id: string, @CurrentUser() user) {
+    return this.trips.finalizeTrip(id, user.sub);
+  }
+
   // POST /api/trips/:id/share
   @Post(':id/share')
   generateShareCode(@Param('id') id: string, @CurrentUser() user) {

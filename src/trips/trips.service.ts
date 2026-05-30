@@ -267,6 +267,28 @@ export class TripsService {
     return this.getForUser(id, userId);
   }
 
+  async finalizeTrip(id: string, userId: string) {
+    const t = await this.trips.findById(id);
+    if (!t) throw new NotFoundException();
+    this.assertOwner(t, userId);
+
+    if (!this.isTripReadyToFinalize(t)) {
+      throw new BadRequestException(
+        'Finalize dates, stay, places, and food before finalizing the trip',
+      );
+    }
+
+    t.tripFinalized = true;
+    t.finalizedAt = new Date();
+    this.addActivity(t, {
+      type: 'trip_finalized',
+      message: 'Trip finalized',
+      actor: userId,
+    });
+    await t.save();
+    return this.getForUser(id, userId);
+  }
+
   async generateShareCode(id: string, userId: string) {
     const t = await this.trips.findById(id);
     if (!t) throw new NotFoundException();
@@ -365,5 +387,15 @@ export class TripsService {
     if (category === 'accommodations') return 'Stay';
     if (category === 'restaurants') return 'Food';
     return 'Place';
+  }
+
+  private isTripReadyToFinalize(trip: TripDocument) {
+    const finalized = (trip.finalized as any) || {};
+    return (
+      (finalized.dateIndex !== undefined || trip.datesFinalized) &&
+      finalized.accommodationIndex !== undefined &&
+      (finalized.placeIndexes?.length || 0) > 0 &&
+      (finalized.restaurantIndexes?.length || 0) > 0
+    );
   }
 }

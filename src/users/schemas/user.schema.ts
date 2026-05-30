@@ -6,7 +6,9 @@ export type UserDocument = HydratedDocument<User>;
 @Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true }) email: string;
-  @Prop({ required: true }) passwordHash: string;
+  @Prop() passwordHash?: string;
+  @Prop() googleId?: string;
+  @Prop({ default: 'email' }) authProvider?: 'email' | 'google';
   @Prop() name?: string;
   @Prop() avatarUrl?: string;
   @Prop() bio?: string;

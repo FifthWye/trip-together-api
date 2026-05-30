@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import type { Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from '../common/user.decorator';
@@ -30,6 +31,20 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.auth.login(dto.email, dto.password);
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+    });
+    return result;
+  }
+
+  @Post('google')
+  async google(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.auth.loginWithGoogle(dto.idToken);
     res.cookie('token', result.token, {
       httpOnly: true,
       sameSite: 'lax',
