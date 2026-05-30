@@ -312,7 +312,9 @@ export class TripsService {
   }
 
   private isMember(trip: any, userId: string) {
-    return (trip.members || []).some((member: any) => member.toString() === userId);
+    return (trip.members || []).some(
+      (member: any) => this.idToString(member) === userId,
+    );
   }
 
   private assertMember(trip: any, userId: string) {
@@ -320,7 +322,11 @@ export class TripsService {
   }
 
   private assertOwner(trip: any, userId: string) {
-    if (trip.owner.toString() !== userId) throw new ForbiddenException();
+    if (this.idToString(trip.owner) !== userId) throw new ForbiddenException();
+  }
+
+  private idToString(value: any) {
+    return value?._id?.toString?.() || value?.id?.toString?.() || value?.toString?.();
   }
 
   private toggleVote(option: any, userId: string, kind: VoteKind) {
